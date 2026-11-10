@@ -243,16 +243,6 @@
     .hero-orbit svg { width: 100%; height: 100%; stroke-width: 1; }
     .hero-meta { display: flex; gap: 16px; color: var(--cp-accent); font-size: 11px; font-weight: 600; margin-bottom: 20px; }
     .topic-panel { margin-top: 24px; padding: 24px; }
-    .chapter-picker { padding: 24px; margin-bottom: 24px; }
-    .chapter-picker-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
-    .chapter-picker-header h2 { font-size: 20px; }
-    .chapter-picker-header p { color: var(--cp-text-muted); font-size: 13px; margin-top: 6px; }
-    .chapter-choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px; }
-    .chapter-choice { display: flex; align-items: flex-start; gap: 12px; min-height: 88px; padding: 16px; text-align: left; border: 1px solid var(--cp-border); border-radius: 12px; color: var(--cp-text); background: var(--cp-bg-elevated); transition: background 220ms, border-color 220ms; }
-    .chapter-choice[aria-pressed="true"] { border-color: var(--cp-accent); background: var(--cp-accent-soft); }
-    .chapter-choice svg { width: 20px; height: 20px; color: var(--cp-accent); margin-top: 2px; }
-    .chapter-choice strong { display: block; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
-    .chapter-choice small { display: block; color: var(--cp-text-muted); font-size: 11px; margin-top: 6px; }
     .chapter-focus { margin: 24px 0; }
     .chapter-focus .eyebrow { margin-bottom: 8px; }
     .chapter-focus h2 { font-size: 24px; line-height: 1.3; overflow-wrap: anywhere; }
@@ -275,7 +265,9 @@
     .add-chapter-card strong { font-size: 15px; font-weight: 600; }
     .add-chapter-card small { max-width: 220px; font-size: 12px; color: var(--cp-text-muted); line-height: 1.6; }
     .add-chapter-icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 12px; background: var(--cp-accent-soft); }
-    .topic-name { display: flex; gap: 8px; justify-content: space-between; align-items: baseline; font-size: 12px; margin-bottom: 12px; }
+    .chapter-select { display: block; width: 100%; min-height: 44px; margin-bottom: 12px; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--cp-text); text-align: left; }
+    .chapter-select:hover { color: var(--cp-accent); }
+    .topic-name { display: flex; gap: 8px; justify-content: space-between; align-items: baseline; font-size: 14px; }
     .topic-name strong { font-weight: 500; overflow-wrap: anywhere; }
     .topic-name span { font-size: 11px; color: var(--cp-text-soft); white-space: nowrap; }
     .progress { height: 5px; border-radius: 8px; background: var(--cp-border); overflow: hidden; }
@@ -455,13 +447,12 @@
       .app-header { padding: 24px; }
       main { padding: 16px 24px 24px; }
       .workspace { grid-template-columns: 1fr; }
+      .topics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .import-panel { min-height: 350px; }
       .hero-orbit { width: 140px; height: 140px; right: 28px; top: 76px; opacity: .45; }
       .app-footer { margin: 16px 24px 24px; }
     }
     @media (max-width: 560px) {
-      .chapter-picker { padding: 16px; }
-      .chapter-picker-header { align-items: flex-start; flex-direction: column; }
       .chapter-focus h2 { font-size: 20px; }
       .app-header { padding: 20px; }
       .brand { font-size: 20px; }
@@ -479,7 +470,7 @@
       .import-panel p { font-size: 13px; }
       .import-actions { gap: 8px; }
       .import-actions .button { padding: 12px 14px; font-size: 12px; }
-      .topics { grid-template-columns: 1fr; gap: 20px; }
+      .topics { grid-template-columns: 1fr; }
       .flashcard-list { grid-template-columns: 1fr; }
       .chunk-grid { grid-template-columns: 1fr; }
       .pack-banner { flex-wrap: wrap; padding: 16px; }
@@ -614,7 +605,7 @@
       chapterFocusIndex = [...topicGroups().keys()].indexOf(chapter);
       markStudyChanged();
       renderHome();
-      document.getElementById("active-chapter-title").focus({ preventScroll: true });
+      document.querySelector(`[data-action="select-chapter"][data-chapter-index="${chapterFocusIndex}"]`).focus({ preventScroll: true });
     }
     function selectRecallSource(source) {
       if (!["all", "mine", "pack"].includes(source)) { notify("That flashcard source is not available."); return; }
@@ -730,10 +721,6 @@
             <p>${loaded ? "Choose a chapter to focus your flashcards. Add more without losing your place." : "Each study pack is one chapter, not a whole book."}</p>
           </div>
           ${loaded ? `<div class="pack-banner panel reveal-in"><span class="mode-icon">${icon("file")}</span><div class="pack-name"><strong>${escapeHTML(pack.chapterCollection ? `Your chapters · ${pack.chapterCollection.courseId}` : pack.title)}</strong><small>${countLabel(topicGroups().size, "chapter")} added · ${countLabel(allCards.length, "flashcard")} · ${countLabel(pack.questions.length, "test question")}</small></div><span class="ready-tag">${icon("check")}Chapters ready</span></div>
-            <section class="chapter-picker panel" aria-labelledby="chapters-title">
-              <div class="chapter-picker-header"><div><h2 id="chapters-title" tabindex="-1">Your chapters</h2><p>Select a chapter to study. Add the next one from the practice section below.</p></div></div>
-              <div class="chapter-choices" role="group" aria-label="Choose a chapter">${[...topicGroups()].map(([chapter, questions]) => `<button type="button" class="chapter-choice" data-action="select-chapter" data-chapter-id="${escapeHTML(chapter)}" aria-pressed="${state.selectedChapter === chapter}">${icon(state.selectedChapter === chapter ? "check" : "file")}<span><strong>${escapeHTML(chapterTitle(chapter))}</strong><small>${countLabel(allCards.filter(card => card.chapter === chapter).length, "flashcard")} · ${countLabel(questions.length, "question")}${state.selectedChapter === chapter ? " · Current chapter" : ""}</small></span></button>`).join("")}</div>
-            </section>
             <section class="chapter-focus" aria-labelledby="active-chapter-title"><div class="eyebrow">${state.selectedChapter === null ? "Study scope" : "Current chapter"}</div><h2 id="active-chapter-title" tabindex="-1">${escapeHTML(selectedTitle)}</h2><p>Choose which flashcards to recall or revisit. Test questions and simulator scores stay separate.</p><div class="card-sources" role="group" aria-label="Flashcards to practice">${cardSourceButtons("recall-source", state.recallSource, chapterCards)}</div></section>` : ""}
           ${loaded && (state.restored || resumeRecall || state.exam?.started || state.chapterTests.size) ? `<section class="resume-banner" aria-label="Saved study session"><div><strong>${state.restored ? "Welcome back. Your place is saved." : "Pick up where you left off."}</strong><p>Each chapter keeps its own flashcard progress and question attempts.</p></div>${resumeRecall ? button("resume-recall", `Continue ${resumeRecall.review ? "review" : "flashcards"} · ${resumeRecall.index + 1} / ${resumeRecall.cards.length}`, "tonal") : ""}${state.exam?.started ? button(state.exam.submitted ? "saved-exam-results" : "exam", state.exam.submitted ? "Last simulator result" : state.exam.running ? "Continue simulator" : "Resume simulator", "tonal") : ""}</section>` : ""}
           <div class="workspace">
@@ -766,9 +753,8 @@
           </div>
           ${loaded ? `
             <section class="topic-panel panel reveal-in stagger-3" aria-labelledby="topics-title" aria-describedby="practice-chapter-context">
-              <div class="topic-heading"><div><h2 id="topics-title" tabindex="-1">Practice, chapter by chapter</h2><p id="practice-chapter-context" class="practice-context" role="status" aria-live="polite">${state.selectedChapter === null ? "Showing all added chapters. Select a chapter above to focus this section." : `Current chapter: <strong>${escapeHTML(selectedTitle)}</strong>`}</p></div><span>Recall the cards. Try the test questions.</span></div>
+              <div class="topic-heading"><div><h2 id="topics-title" tabindex="-1">Practice, chapter by chapter</h2><p id="practice-chapter-context" class="practice-context" role="status" aria-live="polite">${state.selectedChapter === null ? "Select a chapter below to focus your recall and review. All added chapters and their progress stay in this list." : `Current chapter: <strong>${escapeHTML(selectedTitle)}</strong>. Select another chapter below to switch.`}</p></div><span>Recall the cards. Try the test questions.</span></div>
               <div class="topics">${[...topicGroups()].map(([topic, questions], index) => {
-                if (state.selectedChapter !== null && topic !== state.selectedChapter) return "";
                 const chapterCards = allCards.filter(card => card.chapter === topic);
                 const seen = reviewedCount(chapterCards);
                 const packCount = pack.flashcards.filter(card => card.chapter === topic).length;
@@ -778,7 +764,7 @@
                 const plan = state.chapterPractice.get(topic);
                 return `<article class="topic ${state.selectedChapter === topic ? "is-current" : ""}" data-chapter-index="${index}" data-chapter-id="${escapeHTML(topic)}" ${state.selectedChapter === topic ? 'aria-current="true"' : ""}>
                   ${state.selectedChapter === topic ? `<span class="current-chapter-tag">${icon("check")}Current chapter</span>` : ""}
-                  <div class="topic-name"><strong>${escapeHTML(chapterTitle(topic))}</strong><span>${countLabel(questions.length, "test question")}</span></div>
+                  <button type="button" class="chapter-select" data-action="select-chapter" data-chapter-index="${index}" data-chapter-id="${escapeHTML(topic)}" aria-pressed="${state.selectedChapter === topic}" aria-label="Select chapter: ${escapeHTML(chapterTitle(topic))}"><span class="topic-name"><strong>${escapeHTML(chapterTitle(topic))}</strong><span>${countLabel(questions.length, "test question")}</span></span></button>
                   ${chapterCards.length ? `<div class="progress" role="progressbar" aria-label="${escapeHTML(chapterTitle(topic))} flashcard recall progress" aria-valuenow="${seen}" aria-valuemin="0" aria-valuemax="${chapterCards.length}"><span style="width:${seen / chapterCards.length * 100}%"></span></div>` : ""}
                   <small>${chapterCards.length ? `${seen} of ${chapterCards.length} flashcards explored` : "No flashcards yet. Add your own."}</small>
                   <div class="chapter-sources"><span class="source-tag">${icon("file")}${countLabel(packCount, "pack card")}</span><span class="source-tag mine">${icon("leaf")}${countLabel(ownCount, "my card")}</span></div>
@@ -2495,8 +2481,8 @@
         case "recall-source": selectRecallSource(actionButton.dataset.origin); break;
         case "export-pack": exportEnrichedPack(); break;
         case "chapters":
-          document.getElementById("chapters-title").focus({ preventScroll: true });
-          document.getElementById("chapters-title").scrollIntoView({ block: "start", behavior: reduceMotion.matches ? "instant" : "smooth" });
+          document.getElementById("topics-title").focus({ preventScroll: true });
+          document.getElementById("topics-title").scrollIntoView({ block: "start", behavior: reduceMotion.matches ? "instant" : "smooth" });
           break;
         case "chapter-cards": renderChapterCards(); break;
         case "chapter-test": startChapterTest(); break;
